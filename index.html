@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LYRAE Voice</title>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      background: #0C0B09;
+      color: #E8E0D0;
+      font-family: 'Jost', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState, useEffect, useRef } = React;
+
+const LYRAE_SYSTEM_PROMPT = `You are LYRAE Voice — an emotionally intelligent storytelling and identity excavation system designed for women building from lived experience, emotional truth, and personal transformation.`;
+
+const OUTPUT_FORMATS = [
+  {
+    id: "founder-story",
+    label: "Founder Story",
+    description: "A full narrative arc that positions who you are",
+    instruction: "Transform this into a founder story."
+  },
+  {
+    id: "caption",
+    label: "Caption",
+    description: "A post that makes people stop and feel something",
+    instruction: "Transform this into a caption."
+  },
+  {
+    id: "positioning",
+    label: "Positioning",
+    description: "The statement that defines exactly who you are",
+    instruction: "Create positioning."
+  },
+  {
+    id: "hook",
+    label: "Story Hook",
+    description: "The opening line that makes them read everything",
+    instruction: "Create hooks."
+  }
+];
+
+function App() {
+
+  const [rawInput, setRawInput] = useState("");
+  const [selectedFormat, setSelectedFormat] = useState("founder-story");
+  const [output, setOutput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleRefine() {
+
+    setLoading(true);
+
+    try {
+
+      const format = OUTPUT_FORMATS.find(
+        f => f.id === selectedFormat
+      );
+
+      const response = await fetch(
+        "https://api.anthropic.com/v1/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            system: LYRAE_SYSTEM_PROMPT,
+            messages: [
+              {
+                role: "user",
+                content:
+                  `Raw story:\n${rawInput}\n\nInstruction:\n${format.instruction}`
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      setOutput(
+        data.content?.[0]?.text || "No response."
+      );
+
+    } catch (err) {
+
+      console.error(err);
+      setOutput("Something went wrong.");
+
+    }
+
+    setLoading(false);
+  }
+
+  return (
+
+    <div style={{
+      maxWidth: "720px",
+      margin: "0 auto",
+      padding: "48px 24px"
+    }}>
+
+      <h1 style={{
+        fontFamily: "'Cormorant Garamond', serif",
+        fontSize: "48px",
+        color: "#C9A96E",
+        textAlign: "center"
+      }}>
+        LYRAE Voice
+      </h1>
+
+      <p style={{
+        textAlign: "center",
+        opacity: 0.6,
+        marginBottom: "48px"
+      }}>
+        from raw to resonant
+      </p>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2,1fr)",
+        gap: "10px",
+        marginBottom: "24px"
+      }}>
+
+        {OUTPUT_FORMATS.map(format => (
+
+          <button
+            key={format.id}
+            onClick={() => setSelectedFormat(format.id)}
+            style={{
+              padding: "16px",
+              background:
+                selectedFormat === format.id
+                  ? "rgba(201,169,110,.08)"
+                  : "transparent",
+              border: "1px solid rgba(201,169,110,.2)",
+              color: "#E8E0D0",
+              cursor: "pointer"
+            }}
+          >
+
+            <div style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              color: "#C9A96E",
+              marginBottom: "6px"
+            }}>
+              {format.label}
+            </div>
+
+            <small style={{ opacity: 0.5 }}>
+              {format.description}
+            </small>
+
+          </button>
+
+        ))}
+
+      </div>
+
+      <textarea
+        value={rawInput}
+        onChange={(e) => setRawInput(e.target.value)}
+        placeholder="Dump it here..."
+        style={{
+          width: "100%",
+          minHeight: "220px",
+          padding: "24px",
+          background: "rgba(201,169,110,.03)",
+          border: "1px solid rgba(201,169,110,.12)",
+          color: "#E8E0D0",
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: "18px",
+          resize: "vertical"
+        }}
+      />
+
+      <button
+        onClick={handleRefine}
+        disabled={loading}
+        style={{
+          marginTop: "20px",
+          padding: "14px 28px",
+          background: "rgba(201,169,110,.1)",
+          border: "1px solid rgba(201,169,110,.3)",
+          color: "#C9A96E",
+          cursor: "pointer"
+        }}
+      >
+
+        {loading ? "Listening..." : "Refine It"}
+
+      </button>
+
+      {output && (
+
+        <div style={{
+          marginTop: "48px",
+          padding: "32px",
+          background: "rgba(201,169,110,.02)",
+          border: "1px solid rgba(201,169,110,.1)",
+          whiteSpace: "pre-wrap",
+          lineHeight: 1.8,
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: "20px"
+        }}>
+          {output}
+        </div>
+
+      )}
+
+    </div>
+
+  );
+
+}
+
+ReactDOM.createRoot(
+  document.getElementById("root")
+).render(<App />);
+
+</script>
+
+</body>
+</html>
