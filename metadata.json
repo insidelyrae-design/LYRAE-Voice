@@ -1,0 +1,6 @@
+{
+  "name": "LYRAE Voice",
+  "description": "An AI-powered storytelling and identity excavation system for turning raw emotional truth into resonant narratives.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
